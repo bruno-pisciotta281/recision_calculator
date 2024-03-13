@@ -232,6 +232,13 @@
             let salary = parseFloat(document.getElementById("salary").value);
             let admissionDate = new Date(document.getElementById("admission-date").value);
             let terminationDate = new Date(document.getElementById("termination-date").value);
+
+             // Verificar se os campos obrigatórios foram preenchidos
+            if (!salary || !admissionDate || !terminationDate) {
+                alert("Por favor, preencha todos os campos obrigatórios: Salário Bruto, Data de Admissão e Data de Afastamento.");
+                return; // Abortar o cálculo se algum campo estiver vazio
+            }
+
             let reason = document.getElementById("reason").value;
             let noticePeriod = document.getElementById("notice-period").value;
             let dependents = parseInt(document.getElementById("dependents").value);
