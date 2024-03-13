@@ -6,6 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Rescisão Trabalhista</title>
     <style>
           /* Estilos CSS */
@@ -47,7 +48,7 @@
         .nav h1 {
           margin: 0 auto;
           text-align: center;
-          font-size: 15px;
+          font-size: 20px;
           padding: 2%;
         }
 
@@ -97,7 +98,7 @@
         }
 
         #result {
-        width: 50%;
+        width: 75%;
         height: 50%;
         margin: 0 auto; 
         margin-top: 20px;
@@ -129,6 +130,17 @@
         text-align: left;
         }
         */  
+
+          /* CSS para ocultar a tabela inicialmente */
+    #result table {
+        margin: 0 auto;
+        display: none;
+    }
+
+    th, td {
+        border: 1px solid #155724; ;
+        padding: 5px;
+        }
 
     </style>
 </head>
@@ -186,73 +198,117 @@
             <button style="background-color: rgb(218, 7, 7);" type="button" id="clear-button">Limpar</button>
         </div>
         <div id="result">
-            Clique em Calcular para gerar um resultado
-            <br>
-        </div>
-
+            <div id="result-instruction">
+                <h2 style="font-size: 20px;">Clique em <strong>calcular</strong> para exibir os resultados</h2>
+            </div>
+            <h2 id="result-title" style="display: none;">RESULTADO DO CÁLCULO</h2>
+            <table>
+                <tr>
+                    <th>Verbas Rescisórias</th>
+                    <td id="rescission-value">R$ 0,00</td>
+                </tr>
+                <tr>
+                    <th>Descontos</th>
+                    <td id="deductions-value">R$ 0,00</td>
+                </tr>
+                <tr>
+                    <th>Total FGTS</th>
+                    <td id="fgts-value">R$ 0,00</td>
+                </tr>
+                <tr>
+                    <th>Total</th>
+                    <td id="total-value">R$ 0,00</td>
+                </tr>
+            </table>
+        </div> 
     </center>
     </form>
 
     <br>
 
     <script>
-       document.getElementById("calculate-button").addEventListener("click", function() {
-  // Obtem os valores dos campos
-  let salary = parseFloat(document.getElementById("salary").value);
-  let admissionDate = new Date(document.getElementById("admission-date").value);
-  let terminationDate = new Date(document.getElementById("termination-date").value);
-  let reason = document.getElementById("reason").value;
-  let noticePeriod = document.getElementById("notice-period").value;
-  let dependents = parseInt(document.getElementById("dependents").value);
-  let vacation = document.getElementById("vacation").checked;
+        document.getElementById("calculate-button").addEventListener("click", function() {
+            // Obter os valores dos campos
+            let salary = parseFloat(document.getElementById("salary").value);
+            let admissionDate = new Date(document.getElementById("admission-date").value);
+            let terminationDate = new Date(document.getElementById("termination-date").value);
+            let reason = document.getElementById("reason").value;
+            let noticePeriod = document.getElementById("notice-period").value;
+            let dependents = parseInt(document.getElementById("dependents").value);
+            let vacation = document.getElementById("vacation").checked;
+    
+            // Calcular os dias trabalhados
+            let millisecondsPerDay = 1000 * 60 * 60 * 24;
+            let daysWorked = Math.floor((terminationDate - admissionDate) / millisecondsPerDay);
+    
+            // Calcular as férias (se aplicável)
+            let earnedVacationDays = vacation ? Math.min(daysWorked / 12, 30) : 0;
+    
+            // Calcular o valor das férias
+            let vacationPay = earnedVacationDays / 365 * salary * 1.33;
+    
+            // Calcular o 13º salário proporcional
+            let thirteenthSalary = daysWorked / 365 * salary / 12;
+    
+            // Calcular o aviso prévio (se aplicável)
+            let noticePay = 0;
+            if (noticePeriod === "employer_indemnified" && reason !== "with_just_cause") {
+                noticePay = salary; // Indenização pelo empregador em caso de rescisão sem justa causa
+            } else if (noticePeriod === "employee_worked" && reason !== "with_just_cause") {
+                noticePay = daysWorked / 30 * salary; // Aviso prévio trabalhado em caso de rescisão sem justa causa
+            }
+    
+            // Calcular o FGTS (incluindo multa, se aplicável)
+            let fgts = salary * 0.08;
+            if (reason === "employer_indemnified") {
+                fgts += salary * 0.4; // Adicionar multa de 40% em caso de rescisão injusta
+            }
+    
+            // Calcular o total
+            let total = salary + vacationPay + thirteenthSalary + noticePay + fgts;
+    
+            // Exibir resultados na tabela
+            document.getElementById("rescission-value").textContent = "R$ " + total.toFixed(2);
+            document.getElementById("deductions-value").textContent = "R$ " + (salary + vacationPay + thirteenthSalary).toFixed(2);
+            document.getElementById("fgts-value").textContent = "R$ " + fgts.toFixed(2);
+            document.getElementById("total-value").textContent = "R$ " + total.toFixed(2);
+    
+            // Exibir a tabela de resultados e ocultar a mensagem de instrução
+            let resultTable = document.getElementById("result").querySelector("table");
+            resultTable.style.display = "table";
+            document.getElementById("result-instruction").style.display = "none";
+            document.getElementById("result-title").style.display = "block";
 
-  // calcula os dias trabalhados
-  let millisecondsPerDay = 1000 * 60 * 60 * 24;
-  let daysWorked = Math.floor((terminationDate - admissionDate) / millisecondsPerDay);
-
-  // Calculo de Férias (variável)
-  let earnedVacationDays = vacation ? Math.min(daysWorked / 12, 30) : 0;
-
-  // Calculo proporcional das férias pagas e 1/3 bonus
-  let vacationPay = earnedVacationDays / 365 * salary * 1.33;
-
-  // Calcula o 13° salário proporcional
-  let thirteenthSalary = daysWorked / 365 * salary / 12;
-
-  // Calcula o aviso prévio (variável)
-  let noticePay = 0;
-  if (noticePeriod === "employer_indemnified" && reason !== "with_just_cause") {
-    noticePay = salary; // Notificação indenizada pelo empregador por rescisão sem justa causa
-  } else if (noticePeriod === "employee_worked" && reason !== "with_just_cause") {
-    noticePay = daysWorked / 30 * salary; // Prazo de aviso prévio cumprido para rescisão sem justa causa
-  }
-
-  //Calcular FGTS (incluindo multa se for o caso)
-  let fgts = salary * 0.08;
-  if (reason === "employer_indemnified") {
-    fgts += salary * 0.4; // Adicionar multa de 40% por rescisão injusta
-  }
-
-  // Calcular total
-  let total = salary + vacationPay + thirteenthSalary + noticePay + fgts;
-
-  // Exibir resultado
-  document.getElementById("result").innerHTML = "Valor da rescisão: <br> <bold> R$ " + total.toFixed(2);
-}); 
-
-document.getElementById("clear-button").addEventListener("click", function() {
-  // Limpar todos os campos de entrada
-  document.getElementById("salary").value = "";
-  document.getElementById("admission-date").value = "";
-  document.getElementById("termination-date").value = "";
-  document.getElementById("reason").selectedIndex = 0;
-  document.getElementById("notice-period").selectedIndex = 0;
-  document.getElementById("dependents").value = 0;
-  document.getElementById("vacation").checked = false;
-  document.getElementById("result").innerHTML = ""; // Limpa o resultado
-});
-
+             // Centralizar a tabela horizontalmente
+            document.getElementById("result").querySelector("table").style.margin = "0 auto";
+        }); 
+    
+        document.getElementById("clear-button").addEventListener("click", function() {
+            // Limpar todos os campos de entrada
+            document.getElementById("salary").value = "";
+            document.getElementById("admission-date").value = "";
+            document.getElementById("termination-date").value = "";
+            document.getElementById("reason").selectedIndex = 0;
+            document.getElementById("notice-period").selectedIndex = 0;
+            document.getElementById("dependents").value = 0;
+            document.getElementById("vacation").checked = false;
+    
+            // Limpar o resultado e exibir a mensagem de instrução
+            document.getElementById("rescission-value").textContent = "R$ 0.00";
+            document.getElementById("deductions-value").textContent = "R$ 0.00";
+            document.getElementById("fgts-value").textContent = "R$ 0.00";
+            document.getElementById("total-value").textContent = "R$ 0.00";
+    
+            // Ocultar a tabela de resultados e exibir a mensagem de instrução
+            let resultTable = document.getElementById("result").querySelector("table");
+            resultTable.style.display = "none";
+            document.getElementById("result-instruction").style.display = "block";
+            document.getElementById("result-title").style.display = "none";
+        });
     </script>
+    
+    
+    
 </body>
 </html>
     
